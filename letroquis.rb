@@ -42,13 +42,13 @@ class Trie
 		node.valid = node != @root
 	end
 
-	def each_node(&block)
+	def each(&block)
 		traverse(@root, &block)
 	end
 
 	def words(range = nil)
 		result = []
-		each_node do |node|
+		each do |node|
 			range_ok = !range || range === node.word.length
 			result.push(node.word) if node.valid? && range_ok
 		end
@@ -93,7 +93,7 @@ class Trie
 end
 
 class Game
-	MAX_COLUMNS = 80
+	MAX_COLUMNS = 78
 
 	def initialize(filename)
 		@catalog = Trie.new
@@ -103,7 +103,7 @@ class Game
 		@found = []
 		@keyword = @catalog.words(4..7).sample
 		@shuffled = @keyword.chars.shuffle.join
-		# Executa o método de combinação para obter todas as palavras válidas derivadas da selecionada
+		# Executa o método de combinação para obter todas as palavras derivadas válidas
 		combine("", @keyword.chars)
 		@selected.sort!.uniq!
 		@word = ""
@@ -123,7 +123,7 @@ class Game
 	# Este método recursivo obtém todos as palavras válidas do catálogo usando como base as letras da palavra escolhida
 	def combine(word, letters)
 		# Se a palavra passada como parâmetro não gerar um caminho válido na árvore trie, qualquer cadeia descendente dela
-		# também será inválida
+		# também será inválida e a recursão deste ramo deve ser encerrada
 		return unless node = @catalog[word]
 		@selected.push(word) if node.valid?
 		letters.each_with_index do |letter, index|
@@ -152,5 +152,5 @@ class Game
 	end
 end
 
-game = Game.new "palavras.txt"
+game = Game.new("palavras.txt")
 game.run
