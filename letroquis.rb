@@ -1,3 +1,9 @@
+class String
+	def shuffle
+		self.chars.shuffle.join
+	end
+end
+
 class TrieNode
 	attr_reader :valid, :word, :subnodes
 	attr_writer :valid
@@ -49,7 +55,7 @@ class Trie
 	def words(range = nil)
 		result = []
 		each do |node|
-			range_ok = !range || range === node.word.length
+			range_ok = range.nil? || range === node.word.length
 			result.push(node.word) if node.valid? && range_ok
 		end
 		result
@@ -76,7 +82,7 @@ class Trie
 
 	def valid?(word)
 		node = fetch(word)
-		return false if node == nil
+		return false if node.nil?
 		node.valid?
 	end
 
@@ -87,24 +93,29 @@ class Trie
 	private
 
 	def traverse(node, &block)
-		block.call(node) if node != @root
+		block.call(node) unless node == @root
 		node.each_subnode { |node| traverse(node, &block) }
 	end
 end
 
 class Game
 	MAX_COLUMNS = 78
+	
+	MIN_SELECTED = 10
+	MAX_SELECTED = 15
 
 	def initialize(filename)
 		@catalog = Trie.new
 		@catalog.words = File.readlines(filename)
 		# As listas de palavras
-		@selected = []
 		@found = []
-		@keyword = @catalog.words(4..7).sample
-		@shuffled = @keyword.chars.shuffle.join
-		# Executa o método de combinação para obter todas as palavras derivadas válidas
-		combine("", @keyword.chars)
+		begin
+			@keyword = @catalog.words(4..7).sample
+			# Executa o método de combinação para obter todas as palavras derivadas válidas
+			@selected = []
+			combine("", @keyword.chars)
+		end until (MIN_SELECTED..MAX_SELECTED) === @selected.length
+		@shuffled = @keyword.shuffle
 		@selected.sort!.uniq!
 		@word = ""
 	end
@@ -113,20 +124,26 @@ class Game
 		while @found.length < @selected.length && @word != "sair!"
 			# Imprime o tabuleiro
 			print_board
-			@word = gets.chomp
-			@found.push(@word) if @selected.include?(@word)
+			@word = gets.chomp.downcase
+			# Depuração:
+			# if @word == "listar!"
+			# 	print "#{@selected.to_s}\n"
+			# 	print "#{@found.to_s}\n"
+			# end
+			@found.push(@word) if @selected.include?(@word) && !@found.include?(@word)
 		end
 	end
 
 	private
 
-	# Este método recursivo obtém todos as palavras válidas do catálogo usando como base as letras da palavra escolhida
+	# Este método recursivo obtém todas as palavras válidas do catálogo usando como base as letras da palavra escolhida
 	def combine(word, letters)
 		# Se a palavra passada como parâmetro não gerar um caminho válido na árvore trie, qualquer cadeia descendente dela
 		# também será inválida e a recursão deste ramo deve ser encerrada
-		return unless node = @catalog[word]
-		@selected.push(word) if node.valid?
-		letters.each_with_index do |letter, index|
+		node = @catalog[word]
+		return if node.nil?
+		@selected.push(node.word) if node.valid?
+		letters.each.with_index do |letter, index|
 			new_letters = Array.new(letters)
 			new_letters.delete_at(index)
 			combine(word + letter, new_letters)
@@ -148,6 +165,7 @@ class Game
 			end
 			output << " "
 		end
+		print "#{output}\n"
 		print "#{cheat ? @keyword : @shuffled}: "
 	end
 end
