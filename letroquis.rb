@@ -38,6 +38,19 @@ end
 class Trie
 	attr_reader :root
 
+	def words(range = nil)
+		result = []
+		each do |node|
+			range_ok = range.nil? || range === node.word.length
+			result.push(node.word) if node.valid? && range_ok
+		end
+		result
+	end
+
+	def words=(array)
+		array.each { |word| add(word.chomp.downcase) }
+	end
+
 	def initialize
 		@root = TrieNode.new(nil, nil)
 	end
@@ -52,19 +65,6 @@ class Trie
 		traverse(@root, &block)
 	end
 
-	def words(range = nil)
-		result = []
-		each do |node|
-			range_ok = range.nil? || range === node.word.length
-			result.push(node.word) if node.valid? && range_ok
-		end
-		result
-	end
-
-	def words=(array)
-		array.each { |word| add(word.chomp) }
-	end
-
 	def fetch(word)
 		node = @root
 		word.each_char do |char|
@@ -77,7 +77,7 @@ class Trie
 	alias [] fetch
 
 	def include?(word)
-		fetch(word) != nil
+		!fetch(word).nil?
 	end
 
 	def valid?(word)
@@ -100,23 +100,24 @@ end
 
 class Game
 	MAX_COLUMNS = 78
-	
-	MIN_SELECTED = 10
-	MAX_SELECTED = 15
+	LENGTH_RANGE = 4..7
+	SELECTED_RANGE = 10..15
 
 	def initialize(filename)
 		@catalog = Trie.new
 		@catalog.words = File.readlines(filename)
 		# As listas de palavras
 		@found = []
+		pool = @catalog.words(LENGTH_RANGE)
 		begin
-			@keyword = @catalog.words(4..7).sample
+			@keyword = pool.sample
 			# Executa o método de combinação para obter todas as palavras derivadas válidas
 			@selected = []
 			combine("", @keyword.chars)
-		end until (MIN_SELECTED..MAX_SELECTED) === @selected.length
+			@selected.uniq!
+		end until SELECTED_RANGE === @selected.length
 		@shuffled = @keyword.shuffle
-		@selected.sort!.uniq!
+		@selected.sort!
 		@word = ""
 	end
 
