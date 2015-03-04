@@ -1,3 +1,5 @@
+#Letroquis, Forked from github.com/Cosmochefe
+
 class String
   def shuffle
     self.chars.shuffle.join
